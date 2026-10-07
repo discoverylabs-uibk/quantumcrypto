@@ -1,6 +1,6 @@
-# Quantenkryptografie (Schülerlabor)
+# Quantenkryptografie (Lernlabor)
 
-Digitale Werkzeuge zum Schülerlabor Quantenkryptografie, veröffentlicht mit GitHub Pages unter
+Digitale Werkzeuge zum Lernlabor Quantenkryptografie, veröffentlicht mit GitHub Pages unter
 https://discoverylabs-uibk.github.io/quantumcrypto/
 
 | Ordner | Inhalt |
