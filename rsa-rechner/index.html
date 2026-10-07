@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RSA-Rechner</title>
+<style>
+  :root{
+    --bg:#EAF4FB; --card:#ffffff; --ink:#14212b; --muted:#5b6b78; --line:#c9d6e0;
+    --blue:#2E74B5; --green:#4EA72E; --greenbg:#e3f3dc; --orange:#E36C0A; --red:#D40000;
+    --pink:#E4A0DC; --pinkbg:#F5D5F1; --purple:#7030A0;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:18px/1.45 "Segoe UI",Calibri,Arial,sans-serif}
+  .wrap{max-width:760px;margin:0 auto;padding:16px}
+  h1{margin:4px 0 0;font-size:30px;color:#1F3A5F}
+  .sub{margin:2px 0 14px;color:var(--muted);font-size:16px}
+  .tabs{display:flex;gap:8px;margin-bottom:12px}
+  .tab{flex:1;padding:12px 8px;border:2px solid var(--blue);background:#fff;color:var(--blue);
+       font:inherit;font-weight:700;border-radius:12px;cursor:pointer}
+  .tab[aria-selected="true"]{background:var(--blue);color:#fff}
+  .panel{display:none}
+  .panel.active{display:block}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px;margin-bottom:12px}
+  .card h2{margin:0 0 8px;font-size:18px;color:#1F3A5F}
+  .keybox{display:flex;flex-wrap:wrap;align-items:center;gap:10px 18px;padding:10px 14px;border-radius:12px;
+          border:2px solid #2d6a16;background:var(--greenbg)}
+  .keybox.priv{border-color:#a8480a;background:#fdeadb}
+  .keybox label{font-family:"Cambria Math","Times New Roman",serif;font-style:italic;font-size:22px;white-space:nowrap}
+  .keybox input{margin-left:6px}
+  input[type=text]{width:100px;font:inherit;font-size:22px;padding:6px 8px;border:2px solid var(--line);border-radius:8px;
+       text-align:center;background:#fff}
+  input[type=text]:focus{outline:3px solid #9cc6ea;border-color:var(--blue)}
+  .zrow{display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px}
+  .zrow label{font-family:"Cambria Math","Times New Roman",serif;font-style:italic;font-size:24px}
+  .hint{color:var(--muted);font-size:15px}
+  .btns{display:flex;flex-wrap:wrap;gap:10px;margin-top:12px}
+  button.act{font:inherit;font-weight:700;font-size:18px;padding:12px 16px;border-radius:12px;border:0;cursor:pointer;
+       background:var(--blue);color:#fff}
+  button.act:disabled{background:#b9c7d3;cursor:not-allowed}
+  button.ghost{background:#fff;color:var(--blue);border:2px solid var(--blue)}
+  .err{color:var(--red);font-weight:600;margin-top:10px;min-height:1.2em}
+  .step{border-left:6px solid var(--blue);background:#f6fafd;border-radius:0 12px 12px 0;padding:10px 14px;margin-top:12px}
+  .step.s2{border-left-color:var(--pink)}
+  .step .t{font-size:14px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);margin-bottom:4px}
+  .math{font-family:"Cambria Math","Times New Roman",serif;font-size:24px;overflow-wrap:anywhere;word-break:break-all}
+  .big{font-family:"Cambria Math","Times New Roman",serif;font-size:28px;font-weight:700;overflow-wrap:anywhere;word-break:break-all}
+  .mono{font-family:Consolas,"Courier New",monospace}
+  .cn{color:var(--purple);font-weight:700}
+  .ce{color:var(--orange);font-weight:700}
+  .cd{color:var(--red);font-weight:700}
+  .note{font-size:15px;color:var(--muted);margin-top:6px}
+  .warn{background:#fff6dd;border:1px solid #ecd48a;border-radius:8px;padding:6px 10px;font-size:15px;margin-top:8px}
+  .result{margin-top:10px;padding:12px 14px;border-radius:12px;background:var(--pinkbg);border:2px solid #a24097}
+  .result .r{font-family:"Cambria Math","Times New Roman",serif;font-size:36px;font-weight:700}
+  .dline{display:flex;align-items:center;justify-content:center;gap:14px;margin:6px 0 2px}
+  .dval{font-family:"Cambria Math","Times New Roman",serif;font-style:italic;font-size:40px;font-weight:700;color:var(--red);
+        min-width:150px;text-align:center}
+  button.step-btn{width:52px;height:52px;border-radius:50%;border:2px solid var(--blue);background:#fff;color:var(--blue);
+        font-size:30px;font-weight:700;line-height:1;cursor:pointer}
+  button.step-btn:active{background:#d9e9f6}
+  input[type=range]{width:100%;height:46px;accent-color:var(--red);margin:4px 0 0}
+  .scale{display:flex;justify-content:space-between;color:var(--muted);font-size:15px;margin-top:-4px}
+  .pill{display:inline-block;padding:8px 14px;border-radius:999px;font-weight:700;margin-top:8px}
+  .pill.ok{background:#d6f0cc;color:#1d5a0b;border:2px solid #3e9a1f}
+  .pill.no{background:#fde0e0;color:#8f1010;border:2px solid #d33}
+  .why{margin-top:10px;padding:10px 14px;border-radius:12px;background:#eaf6e4;border:1px solid #9fd488}
+  .grid{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+  .chip{min-width:44px;padding:6px 4px;border-radius:8px;border:1px solid var(--line);background:#fff;font:inherit;
+        font-size:15px;cursor:pointer;text-align:center}
+  .chip.ok{background:#d6f0cc;border-color:#3e9a1f;font-weight:700}
+  .chip.cur{outline:3px solid var(--red)}
+  .chip small{display:block;color:var(--muted);font-size:11px}
+  details{margin-top:8px;font-size:15px;color:var(--muted)}
+  summary{cursor:pointer}
+  sup{font-size:.6em}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>RSA-Rechner</h1>
+  <p class="sub">Hilft dir bei den großen Zahlen. Buchstaben nachschlagen und Ergebnisse eintragen machst du selbst.</p>
+
+  <div class="tabs" role="tablist">
+    <button class="tab" role="tab" id="tab-key" aria-selected="true">d finden</button>
+    <button class="tab" role="tab" id="tab-enc" aria-selected="false">Verschlüsselung</button>
+    <button class="tab" role="tab" id="tab-dec" aria-selected="false">Entschlüsselung</button>
+  </div>
+
+  <!-- ============ SCHLÜSSEL: d FINDEN ============ -->
+  <section class="panel active" id="panel-key">
+    <div class="card">
+      <h2>Von deiner Karte „Geheime Schlüssel“</h2>
+      <div class="keybox">
+        <label>φ =<input type="text" inputmode="numeric" id="key-phi" autocomplete="off"></label>
+        <label>e = <input type="text" inputmode="numeric" id="key-e" autocomplete="off"></label>
+      </div>
+      <div class="hint" style="margin-top:8px">Diese Zahlen hast du schon von Hand bestimmt. Jetzt suchst du d.</div>
+      <div class="err" id="key-err"></div>
+    </div>
+    <div class="card" id="key-card" style="display:none">
+      <h2>Schiebe d, bis der Rest 1 ist</h2>
+      <div class="dline">
+        <button class="step-btn" id="key-minus" aria-label="d kleiner">−</button>
+        <div class="dval">d = <span id="key-dval">1</span></div>
+        <button class="step-btn" id="key-plus" aria-label="d größer">+</button>
+      </div>
+      <input type="range" id="key-slider" min="1" max="2" value="1" step="1" aria-label="d">
+      <div class="scale"><span>1</span><span id="key-max"></span></div>
+      <div id="key-calc"></div>
+      <div id="key-why"></div>
+
+      <details><summary>Tipp: alle Möglichkeiten auf einen Blick</summary>
+        <div class="note">Grün heißt: Rest 1. Tippe auf eine Zahl, um den Regler dorthin zu setzen.</div>
+        <div class="grid" id="key-grid"></div>
+      </details>
+    </div>
+  </section>
+
+  <!-- ============ VERSCHLÜSSELUNG ============ -->
+  <section class="panel" id="panel-enc">
+    <div class="card">
+      <h2>Öffentlicher Schlüssel des Empfängers</h2>
+      <div class="keybox">
+        <label>n = <input type="text" inputmode="numeric" id="enc-n" autocomplete="off"></label>
+        <label>e = <input type="text" inputmode="numeric" id="enc-e" autocomplete="off"></label>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Ein Buchstabe der Botschaft</h2>
+      <div class="zrow">
+        <label>z = <input type="text" inputmode="numeric" id="enc-z" autocomplete="off"></label>
+        <span class="hint">Die Zahl zu deinem Buchstaben steht in der Tabelle Buchstaben und Zahlen.</span>
+      </div>
+      <div class="btns">
+        <button class="act" id="enc-b1">1. Rechne z hoch e</button>
+        <button class="act" id="enc-b2" disabled>2. Teile durch n mit Rest</button>
+        <button class="act ghost" id="enc-new">Nächster Buchstabe</button>
+      </div>
+      <div class="err" id="enc-err"></div>
+      <div id="enc-out"></div>
+    </div>
+  </section>
+
+  <!-- ============ ENTSCHLÜSSELUNG ============ -->
+  <section class="panel" id="panel-dec">
+    <div class="card">
+      <h2>Dein geheimer Schlüssel</h2>
+      <div class="keybox priv">
+        <label>d = <input type="text" inputmode="numeric" id="dec-d" autocomplete="off"></label>
+        <label>n = <input type="text" inputmode="numeric" id="dec-n" autocomplete="off"></label>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Eine empfangene Zahl</h2>
+      <div class="zrow">
+        <label>c = <input type="text" inputmode="numeric" id="dec-z" autocomplete="off"></label>
+        <span class="hint">Eine Zahl aus der verschlüsselten Botschaft.</span>
+      </div>
+      <div class="btns">
+        <button class="act" id="dec-b1">1. Rechne c hoch d</button>
+        <button class="act" id="dec-b2" disabled>2. Teile durch n mit Rest</button>
+        <button class="act ghost" id="dec-new">Nächste Zahl</button>
+      </div>
+      <div class="err" id="dec-err"></div>
+      <div id="dec-out"></div>
+    </div>
+  </section>
+  <p class="hint" style="margin-top:18px"><a href="../">← Quantenkryptografie</a> · Alle Rechnungen laufen in deinem Browser. Es werden keine Daten gespeichert oder gesendet.</p>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  function group(big){
+    // 1234567 -> "1 234 567" (thin spaces), easier to read off and type into a pocket calculator
+    return big.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+  }
+  function parseNat(str){
+    var s = String(str).trim();
+    if(!/^\d+$/.test(s)) return null;
+    return BigInt(s);
+  }
+
+  // cfg: {id:'enc'|'dec', base:'z'|'c', expName:'e'|'d', expClass:'ce'|'cd', baseLabel, resultText, resultHelp}
+  function makePanel(cfg){
+    var $ = function(s){ return document.getElementById(cfg.id + "-" + s); };
+    var nIn = $("n"), eIn = $(cfg.expName === "e" ? "e" : "d"), zIn = $("z");
+    var b1 = $("b1"), b2 = $("b2"), bNew = $("new"), err = $("err"), out = $("out");
+    var state = null;  // {n,e,z,pow}
+
+    function reset(){
+      state = null; out.innerHTML = ""; err.textContent = ""; b2.disabled = true;
+    }
+    [nIn,eIn,zIn].forEach(function(el){ el.addEventListener("input", reset); });
+
+    function readInputs(){
+      var n = parseNat(nIn.value), e = parseNat(eIn.value), z = parseNat(zIn.value);
+      if(n === null || n < 2n) return {error:"Bitte trage für n eine ganze Zahl ab 2 ein."};
+      if(e === null || e < 1n) return {error:"Bitte trage für " + cfg.expName + " eine ganze Zahl ab 1 ein."};
+      if(e > 500n) return {error:cfg.expName + " ist zu groß für diesen Rechner (höchstens 500)."};
+      if(z === null) return {error:"Bitte trage für " + cfg.base + " eine ganze Zahl ein."};
+      if(z < 1n) return {error:cfg.base + " muss mindestens 1 sein."};
+      if(z >= n) return {error:cfg.base + " muss kleiner als n sein. Hier ist " + cfg.base + " = " + z + " und n = " + n + "."};
+      return {n:n, e:e, z:z};
+    }
+
+    function chain(zs, e){
+      var ei = Number(e);
+      var parts = [];
+      if(ei <= 9){
+        for(var i=0;i<ei;i++) parts.push(zs);
+        return parts.join(" · ");
+      }
+      return zs + " · " + zs + " · " + zs + " · … · " + zs +
+             ' <span class="hint">(' + ei + " Faktoren)</span>";
+    }
+
+    b1.addEventListener("click", function(){
+      var r = readInputs();
+      if(r.error){ reset(); err.textContent = r.error; return; }
+      err.textContent = "";
+      var pow = r.z ** r.e;
+      state = {n:r.n, e:r.e, z:r.z, pow:pow};
+      var digits = pow.toString().length;
+      var html = '<div class="step"><div class="t">Schritt 1: Hochrechnen</div>' +
+        '<div class="math">' + cfg.base + '<sup class="' + cfg.expClass + '">' + r.e + '</sup> = ' +
+        chain(String(r.z), r.e) + '</div>' +
+        '<div class="big" style="margin-top:6px">' + cfg.base + '<sup class="' + cfg.expClass + '">' + r.e + '</sup> = ' +
+        group(pow) + '</div>';
+      if(digits > 12){
+        html += '<div class="warn">Diese Zahl hat ' + digits + ' Ziffern. Das passt nicht in den Taschenrechner. ' +
+                'Genau dafür ist dieser Rechner da. Klicke jetzt auf Schritt 2.</div>';
+      } else {
+        html += '<div class="note">Das kannst du zur Kontrolle auch mit dem Taschenrechner nachrechnen.</div>';
+      }
+      html += '</div>';
+      out.innerHTML = html;
+      b2.disabled = false;
+    });
+
+    b2.addEventListener("click", function(){
+      if(!state) return;
+      var q = state.pow / state.n, rest = state.pow % state.n;
+      var html = out.innerHTML.replace(/<div class="step s2">[\s\S]*$/, "");
+      html += '<div class="step s2"><div class="t">Schritt 2: Teilen mit Rest</div>' +
+        '<div class="math">' + cfg.base + '<sup class="' + cfg.expClass + '">' + state.e + '</sup> : <span class="cn">' + state.n +
+        '</span> = ' + group(q) + ' <b>Rest ' + group(rest) + '</b></div>' +
+        '<div class="note"><span class="cn">' + state.n + '</span> passt ' + group(q) + '-mal in ' +
+        group(state.pow) + '. Übrig bleibt der Rest.</div>' +
+        '<details><summary>Probe anzeigen</summary><div class="math mono" style="font-size:16px">' +
+        state.n + ' · ' + group(q) + ' + ' + group(rest) + ' = ' + group(state.n * q + rest) + '</div></details>' +
+        '<div class="result"><div class="t" style="margin:0">' + cfg.resultText + '</div>' +
+        '<div class="r">Rest = ' + group(rest) + '</div>' +
+        '<div class="note" style="color:#5a2a55">' + cfg.resultHelp + '</div></div></div>';
+      out.innerHTML = html;
+    });
+
+    function fresh(){
+      reset(); zIn.value = ""; zIn.focus();
+    }
+    bNew.addEventListener("click", fresh);
+
+    // Enter in the number field: first Enter = Schritt 1, second Enter = Schritt 2
+    [nIn,eIn,zIn].forEach(function(el){
+      el.addEventListener("keydown", function(ev){
+        if(ev.key !== "Enter") return;
+        ev.preventDefault();
+        if(state && !b2.disabled) b2.click(); else b1.click();
+      });
+    });
+  }
+
+  makePanel({id:"enc", base:"z", expName:"e", expClass:"ce",
+    resultText:"Verschlüsselte Zahl",
+    resultHelp:"Trage diese Zahl in die Spalte Rest ein und danach auf die Botschaftskarte."});
+  makePanel({id:"dec", base:"c", expName:"d", expClass:"cd",
+    resultText:"Entschlüsselte Zahl",
+    resultHelp:"Trage diese Zahl in die Spalte Rest ein. Den Buchstaben dazu suchst du in der Tabelle."});
+
+  // ============ d finden (Regler) ============
+  (function keyPanel(){
+    var $ = function(s){ return document.getElementById("key-" + s); };
+    var phiIn=$("phi"), eIn=$("e"), err=$("err"), card=$("card"),
+        slider=$("slider"), dval=$("dval"), maxLbl=$("max"), minus=$("minus"), plus=$("plus"),
+        calc=$("calc"), why=$("why"), grid=$("grid");
+    var S = null; // {phi,e}
+
+    function gcd(a,b){ while(b){ var t=a%b; a=b; b=t; } return a; }
+
+    function update(){
+      S = null; err.textContent = ""; card.style.display = "none";
+      var phi=parseNat(phiIn.value), e=parseNat(eIn.value);
+      if(phiIn.value.trim()==="" || eIn.value.trim()==="") return;   // still typing
+      if(phi===null || phi<3n){ err.textContent="Bitte trage für φ eine ganze Zahl ab 3 ein."; return; }
+      if(phi>2000n){ err.textContent="φ ist zu groß für den Regler (höchstens 2000)."; return; }
+      if(e===null || e<2n || e>=phi){ err.textContent="e muss größer als 1 und kleiner als φ sein."; return; }
+      var g = gcd(Number(e), Number(phi));
+      if(g!==1){
+        err.textContent="e = "+e+" und φ = "+phi+" haben den gemeinsamen Teiler "+g+
+          ". Mit diesem e gibt es kein passendes d. Wähle ein anderes e (Tipp: eine Primzahl, die φ nicht teilt).";
+        return;
+      }
+      S = {phi:phi, e:e};
+      var max = Number(phi)-1;
+      slider.min = 1; slider.max = max;
+      if(Number(slider.value)>max || Number(slider.value)<1) slider.value = 1;
+      maxLbl.textContent = String(max);
+      // overview chips
+      var html="";
+      for(var d=1; d<=max; d++){
+        var r = (e*BigInt(d))%phi;
+        html += '<button class="chip'+(r===1n?' ok':'')+'" data-d="'+d+'">'+d+'<small>Rest '+r+'</small></button>';
+      }
+      grid.innerHTML = html;
+      card.style.display = "block";
+      render();
+    }
+
+    function render(){
+      if(!S) return;
+      var d = BigInt(slider.value), e=S.e, phi=S.phi;
+      dval.textContent = String(d);
+      var prod = e*d, q = prod/phi, r = prod%phi, ok = (r===1n);
+      var h = '<div class="step" style="margin-top:10px"><div class="t">Rechnung</div>' +
+        '<div class="math"><span class="ce">'+e+'</span> · <span class="cd">'+d+'</span> = '+group(prod)+'</div>' +
+        '<div class="math">'+group(prod)+' : '+phi+' = '+group(q)+' <b>Rest '+r+'</b></div>' +
+        '<div class="note">'+phi+' passt '+group(q)+'-mal in '+group(prod)+'. Übrig bleibt der Rest.</div>' +
+        '<span class="pill '+(ok?'ok':'no')+'">' +
+        (ok ? 'Rest = 1 ✓ Dieses d passt!' : 'Rest = '+r+' ✗ Der Rest muss 1 sein. Schiebe weiter.') +
+        '</span></div>';
+      calc.innerHTML = h;
+      if(ok){
+        why.innerHTML = '<div class="why"><b>Warum funktioniert das?</b><br>' +
+          '<span class="math" style="font-size:20px">'+e+' · '+d+' = '+group(prod)+' = '+group(q)+' · '+phi+' + 1</span><br>' +
+          'Weil e · d genau ein Vielfaches von φ plus 1 ist, heben sich „hoch e“ (verschlüsseln) und „hoch d“ (entschlüsseln) gegenseitig auf. ' +
+          'Du kommst bei der Botschaft wieder an.<br>' +
+          'Zwischen 1 und '+(phi-1n)+' gibt es genau ein solches d. Trage <b class="cd">d = '+d+'</b> auf deine Karte ein.</div>';
+      } else {
+        why.innerHTML = "";
+      }
+      // highlight chip
+      var cs = grid.querySelectorAll(".chip");
+      for(var i=0;i<cs.length;i++) cs[i].classList.toggle("cur", cs[i].getAttribute("data-d")===String(d));
+    }
+
+    [phiIn,eIn].forEach(function(el){ el.addEventListener("input", update); });
+    slider.addEventListener("input", render);
+    minus.addEventListener("click", function(){ if(!S) return; slider.value = Math.max(Number(slider.min), Number(slider.value)-1); render(); });
+    plus.addEventListener("click", function(){ if(!S) return; slider.value = Math.min(Number(slider.max), Number(slider.value)+1); render(); });
+    grid.addEventListener("click", function(ev){
+      var t = ev.target.closest(".chip"); if(!t) return;
+      slider.value = t.getAttribute("data-d"); render();
+    });
+  })();
+
+  // Tabs
+  var tabs = {key:document.getElementById("tab-key"), enc:document.getElementById("tab-enc"), dec:document.getElementById("tab-dec")};
+  var panels = {key:document.getElementById("panel-key"), enc:document.getElementById("panel-enc"), dec:document.getElementById("panel-dec")};
+  Object.keys(tabs).forEach(function(k){
+    tabs[k].addEventListener("click", function(){
+      Object.keys(tabs).forEach(function(j){
+        tabs[j].setAttribute("aria-selected", j === k ? "true" : "false");
+        panels[j].classList.toggle("active", j === k);
+      });
+    });
+  });
+
+  // Convenience: copy n between the two tabs is NOT done on purpose
+  // (the encryption n belongs to the other team, the decryption n is your own).
+})();
+</script>
+</body>
+</html>
