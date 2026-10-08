@@ -1,0 +1,37 @@
+# Einstellungen und Aussehen. Die Texte stehen in website/*.md
+site_name: "Quantenkryptografie"
+site_description: "Lernlabor Quantenkryptografie: digitale Werkzeuge."
+site_url: https://discoverylabs-uibk.github.io/quantumcrypto/
+repo_url: https://github.com/discoverylabs-uibk/quantumcrypto
+repo_name: discoverylabs-uibk/quantumcrypto
+docs_dir: website
+edit_uri: edit/main/website/
+copyright: >
+  Discovery Labs Innsbruck.
+
+theme:
+  name: material
+  language: de
+  icon:
+    repo: fontawesome/brands/github
+  features:
+    - content.action.edit
+    - navigation.footer
+  palette:
+    - scheme: default
+      primary: custom
+      accent: custom
+
+extra_css:
+  - stylesheets/extra.css
+
+markdown_extensions:
+  - attr_list
+  - md_in_html
+  - admonition
+  - tables
+  - toc:
+      permalink: false
+
+nav:
+  - Start: index.md
