@@ -74,6 +74,8 @@
   details{margin-top:8px;font-size:15px;color:var(--muted)}
   summary{cursor:pointer}
   sup{font-size:.6em}
+  details.wrow{margin-top:4px;font-size:18px;color:var(--ink)}
+  details.wrow summary{padding:6px 10px;background:#fff;border:1px solid var(--line);border-radius:8px}
 </style>
 </head>
 <body>
@@ -127,7 +129,17 @@
       </div>
     </div>
     <div class="card">
-      <h2>Ein Buchstabe der Botschaft</h2>
+      <h2>Ganzes Wort auf einmal</h2>
+      <div class="zrow">
+        <label>Wort = <input type="text" id="encw-word" autocomplete="off" autocapitalize="characters" spellcheck="false" style="width:260px;font-style:normal;font-family:inherit"></label>
+      </div>
+      <div class="hint" style="margin-top:6px">Nur Buchstaben A bis Z. Ä = AE, Ö = OE, Ü = UE, ß = SS. Der Rechner nimmt A = 1 bis Z = 26.</div>
+      <div class="btns"><button class="act" id="encw-go">Wort verschlüsseln</button></div>
+      <div class="err" id="encw-err"></div>
+      <div id="encw-out"></div>
+    </div>
+    <div class="card">
+      <h2>Ein Buchstabe, Schritt für Schritt</h2>
       <div class="zrow">
         <label>z = <input type="text" inputmode="numeric" id="enc-z" autocomplete="off"></label>
         <span class="hint">Die Zahl zu deinem Buchstaben steht in der Tabelle Buchstaben und Zahlen.</span>
@@ -152,7 +164,17 @@
       </div>
     </div>
     <div class="card">
-      <h2>Eine empfangene Zahl</h2>
+      <h2>Ganze Nachricht auf einmal</h2>
+      <div class="zrow">
+        <label>Zahlen = <input type="text" id="decw-nums" autocomplete="off" spellcheck="false" style="width:340px;font-style:normal;font-family:inherit"></label>
+      </div>
+      <div class="hint" style="margin-top:6px">Schreibe die Zahlen der Nachricht mit Leerzeichen dazwischen, zum Beispiel 17 1 12 12 9.</div>
+      <div class="btns"><button class="act" id="decw-go">Nachricht entschlüsseln</button></div>
+      <div class="err" id="decw-err"></div>
+      <div id="decw-out"></div>
+    </div>
+    <div class="card">
+      <h2>Eine Zahl, Schritt für Schritt</h2>
       <div class="zrow">
         <label>c = <input type="text" inputmode="numeric" id="dec-z" autocomplete="off"></label>
         <span class="hint">Eine Zahl aus der verschlüsselten Botschaft.</span>
@@ -354,6 +376,81 @@
       slider.value = t.getAttribute("data-d"); render();
     });
   })();
+
+  // ============ ganze Wörter auf einmal ============
+  function bigshow(x){
+    var s = x.toString();
+    if(s.length <= 20) return group(x);
+    return s.slice(0,6) + "… <span class=\"hint\">(" + s.length + " Ziffern)</span>";
+  }
+  function normWord(w){
+    return w.toUpperCase().replace(/Ä/g,"AE").replace(/Ö/g,"OE").replace(/Ü/g,"UE").replace(/ẞ|ß/g,"SS");
+  }
+  function wordPanel(cfg){
+    var $ = function(s){ return document.getElementById(cfg.id + "-" + s); };
+    var go = $("go"), out = $("out"), err = $("err"), inp = $(cfg.input);
+    var nIn = document.getElementById(cfg.keyPrefix + "-n"), kIn = document.getElementById(cfg.keyPrefix + "-" + cfg.expName);
+    function readKey(){
+      var n = parseNat(nIn.value), k = parseNat(kIn.value);
+      if(n === null || n < 2n) return {error:"Bitte trage oben für n eine ganze Zahl ab 2 ein."};
+      if(k === null || k < 1n) return {error:"Bitte trage oben für " + cfg.expName + " eine ganze Zahl ab 1 ein."};
+      if(k > 500n) return {error:cfg.expName + " ist zu groß für diesen Rechner (höchstens 500)."};
+      return {n:n, k:k};
+    }
+    function stepsHtml(base, k, n, expCls){
+      var pow = base ** k, q = pow / n, rest = pow % n;
+      return {rest:rest, html:
+        '<div class="math">' + base + '<sup class="' + expCls + '">' + k + '</sup> = ' + bigshow(pow) + '</div>' +
+        '<div class="math">' + bigshow(pow) + ' : <span class="cn">' + n + '</span> = ' + bigshow(q) + ' <b>Rest ' + group(rest) + '</b></div>'};
+    }
+    go.addEventListener("click", function(){
+      err.textContent = ""; out.innerHTML = "";
+      var key = readKey();
+      if(key.error){ err.textContent = key.error; return; }
+      var n = key.n, k = key.k, rows = "", res = [], letters = "";
+      if(cfg.mode === "enc"){
+        var w = normWord(inp.value).replace(/[^A-Z]/g, "");
+        if(w.length === 0){ err.textContent = "Bitte schreibe ein Wort mit den Buchstaben A bis Z."; return; }
+        if(w.length > 12){ err.textContent = "Das Wort ist zu lang (höchstens 12 Buchstaben)."; return; }
+        for(var i=0;i<w.length;i++){
+          var z = BigInt(w.charCodeAt(i) - 64);
+          if(z >= n){ err.textContent = "Der Buchstabe " + w[i] + " hat die Zahl " + z + ". Das ist nicht kleiner als n = " + n + ". Mit diesem n kann man diesen Buchstaben nicht verschlüsseln."; return; }
+          var s = stepsHtml(z, k, n, "ce");
+          res.push(group(s.rest));
+          rows += '<details class="wrow"><summary><b>' + w[i] + '</b> = ' + z + ' → <span class="cn">' + group(s.rest) + '</span></summary>' +
+                  '<div class="step" style="margin-top:6px"><div class="t">Schritte für ' + w[i] + '</div>' + s.html + '</div></details>';
+        }
+        out.innerHTML = '<div class="result"><div class="t" style="margin:0">Verschlüsselte Nachricht</div>' +
+          '<div class="r mono" style="font-size:34px">' + res.join(" ") + '</div>' +
+          '<div class="note" style="color:#5a2a55">Schreibe diese Zahlen mit Leerzeichen auf die Tafel.</div></div>' +
+          '<details style="margin-top:10px"><summary>Schritte pro Buchstabe anzeigen</summary>' + rows + '</details>';
+      } else {
+        var parts = inp.value.trim().split(/[^0-9]+/).filter(function(x){return x.length;});
+        if(parts.length === 0){ err.textContent = "Bitte trage die Zahlen der Nachricht ein."; return; }
+        if(parts.length > 12){ err.textContent = "Das sind zu viele Zahlen (höchstens 12)."; return; }
+        var bad = false;
+        for(var j=0;j<parts.length;j++){
+          var c = BigInt(parts[j]);
+          if(c >= n){ err.textContent = "Die Zahl " + c + " ist nicht kleiner als n = " + n + ". Stimmt das n? Zum Entschlüsseln brauchst du das n der Empfängerin oder des Empfängers der Nachricht."; return; }
+          var s2 = stepsHtml(c, k, n, "cd");
+          var r = s2.rest, ch = (r >= 1n && r <= 26n) ? String.fromCharCode(64 + Number(r)) : "?";
+          if(ch === "?") bad = true;
+          letters += ch; res.push(group(r));
+          rows += '<details class="wrow"><summary><span class="cn">' + c + '</span> → ' + group(r) + ' → <b>' + ch + '</b></summary>' +
+                  '<div class="step" style="margin-top:6px"><div class="t">Schritte für ' + c + '</div>' + s2.html + '</div></details>';
+        }
+        out.innerHTML = '<div class="result"><div class="t" style="margin:0">Entschlüsselte Nachricht</div>' +
+          '<div class="r">' + letters + '</div>' +
+          (bad ? '<div class="note" style="color:#7a1c1c;font-weight:600;margin-top:6px">Ein ? bedeutet: Es kam keine Zahl von 1 bis 26 heraus. Stimmen d und n? Oder war die Nachricht gar nicht für dich?</div>' :
+                 '<div class="note" style="color:#5a2a55">Das ist die ganze Nachricht.</div>') + '</div>' +
+          '<details style="margin-top:10px"><summary>Schritte pro Zahl anzeigen</summary>' + rows + '</details>';
+      }
+    });
+    inp.addEventListener("keydown", function(ev){ if(ev.key === "Enter"){ ev.preventDefault(); go.click(); } });
+    [nIn, kIn, inp].forEach(function(el){ el.addEventListener("input", function(){ out.innerHTML = ""; err.textContent = ""; }); });
+  }
+  wordPanel({id:"encw", mode:"enc", input:"word", keyPrefix:"enc", expName:"e"});
+  wordPanel({id:"decw", mode:"dec", input:"nums", keyPrefix:"dec", expName:"d"});
 
   // Tabs
   var tabs = {key:document.getElementById("tab-key"), enc:document.getElementById("tab-enc"), dec:document.getElementById("tab-dec")};
